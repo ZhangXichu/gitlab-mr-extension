@@ -42,6 +42,7 @@ test("toMrItem picks the fields the popup shows", () => {
     has_conflicts: true,
     detailed_merge_status: "mergeable",
     user_notes_count: 3,
+    description: "Fixes the crash.",
   });
   assert.deepEqual(item, {
     id: 7,
@@ -54,6 +55,7 @@ test("toMrItem picks the fields the popup shows", () => {
     hasConflicts: true,
     status: "mergeable",
     comments: 3,
+    description: "Fixes the crash.",
   });
 });
 
@@ -64,6 +66,7 @@ test("toMrItem tolerates missing optional fields", () => {
   assert.equal(item.draft, false);
   assert.equal(item.hasConflicts, false);
   assert.equal(item.comments, 0);
+  assert.equal(item.description, "");
 });
 
 test("toMentionItems keeps only mentions and direct addresses", () => {

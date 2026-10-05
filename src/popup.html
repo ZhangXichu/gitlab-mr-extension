@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>GitLab MR Board</title>
+  <title>Work Board</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="popup">
   <header>
     <nav role="tablist">
-      <button role="tab" data-tab="mine" aria-selected="true">My MRs <span class="count" data-count="mine"></span></button>
-      <button role="tab" data-tab="reviewing" aria-selected="false">To review <span class="count" data-count="reviewing"></span></button>
-      <button role="tab" data-tab="mentions" aria-selected="false">Mentions <span class="count" data-count="mentions"></span></button>
+      <button role="tab" data-tab="mine" aria-selected="true">My MRs <span class="count"></span></button>
+      <button role="tab" data-tab="reviewing" aria-selected="false">To review <span class="count"></span></button>
+      <button role="tab" data-tab="mentions" aria-selected="false">Mentions <span class="count"></span></button>
+      <button role="tab" data-tab="jira" aria-selected="false" hidden>Jira <span class="count"></span></button>
+      <button role="tab" data-tab="mail" aria-selected="false" hidden>Mail <span class="count"></span></button>
     </nav>
     <div class="tools">
       <button id="refresh" title="Refresh">↻</button>

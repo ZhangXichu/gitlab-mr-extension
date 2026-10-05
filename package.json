@@ -3,6 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/",
+    "vendor": "esbuild scripts/vendor-entry.js --bundle --format=esm --platform=browser --target=chrome120 --minify --legal-comments=eof --outfile=src/vendor/anthropic-sdk.js"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "esbuild": "0.28.2"
   }
 }

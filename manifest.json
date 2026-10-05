@@ -1,19 +1,36 @@
 {
   "manifest_version": 3,
-  "name": "GitLab MR Board",
-  "version": "1.0.0",
-  "description": "Shows your open GitLab merge requests and the places where someone @ mentions you.",
-  "permissions": ["storage", "alarms"],
-  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "name": "Work Board",
+  "version": "1.1.0",
+  "description": "Shows your GitLab merge requests and mentions, Jira mentions and unread Gmail, with optional Claude summaries.",
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
   "background": {
     "service_worker": "src/background.js",
     "type": "module"
   },
   "action": {
     "default_popup": "src/popup.html",
-    "default_title": "GitLab MR Board",
-    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png" }
+    "default_title": "Work Board",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
   },
-  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
-  "options_ui": { "page": "src/options.html", "open_in_tab": true }
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  }
 }

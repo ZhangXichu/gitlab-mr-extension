@@ -8,14 +8,20 @@ const footer = document.getElementById("footer");
 const refreshButton = document.getElementById("refresh");
 const tabs = [...document.querySelectorAll("[role=tab]")];
 
-const EMPTY_TEXT = {
-  mine: "You have no open merge requests.",
-  reviewing: "Nobody is waiting for your review.",
-  mentions: "No pending mentions.",
+// Each tab reads one source from the dashboard state.
+const TABS = {
+  mine: { source: "gitlab", items: (data) => data.mine, empty: "You have no open merge requests." },
+  reviewing: { source: "gitlab", items: (data) => data.reviewing, empty: "Nobody is waiting for your review." },
+  mentions: { source: "gitlab", items: (data) => data.mentions, empty: "No pending GitLab mentions." },
+  jira: { source: "jira", items: (data) => data.mentions, empty: "No Jira mentions in the last 14 days." },
+  mail: { source: "gmail", items: (data) => data.items, empty: "No unread mail." },
 };
 
 let currentTab = "mine";
 let currentState = null;
+let anthropicKey = "";
+// Summaries made while the popup is open, by item key, so a refresh does not drop them.
+const summaries = new Map();
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -34,6 +40,40 @@ function link(url, text) {
   return anchor;
 }
 
+function summaryArea(row, meta, input) {
+  if (!anthropicKey) return;
+  const key = `${input.kind}:${input.id}`;
+  const output = element("p", "summary");
+  output.hidden = !summaries.has(key);
+  output.textContent = summaries.get(key) ?? "";
+
+  const button = element("button", "small push", "Summarize");
+  button.title = "Ask Claude for a short summary";
+  button.addEventListener("click", () => onSummarize(key, input, button, output));
+  meta.append(button);
+  row.append(output);
+}
+
+async function onSummarize(key, input, button, output) {
+  button.disabled = true;
+  button.textContent = "…";
+  try {
+    // Loaded only on click, so opening the popup stays fast.
+    const { summarize } = await import("./claude.js");
+    const text = await summarize(anthropicKey, input);
+    summaries.set(key, text);
+    output.textContent = text;
+    output.classList.remove("error");
+  } catch (error) {
+    output.textContent = error.message;
+    output.classList.add("error");
+  } finally {
+    output.hidden = false;
+    button.disabled = false;
+    button.textContent = "Summarize";
+  }
+}
+
 function mrRow(mr) {
   const row = element("li", "item");
   row.append(link(mr.url, mr.title));
@@ -45,6 +85,7 @@ function mrRow(mr) {
   if (mr.comments > 0) meta.append(element("span", "", `💬 ${mr.comments}`));
   meta.append(element("span", "", `${mr.author} · ${relativeTime(mr.updatedAt)}`));
   row.append(meta);
+  summaryArea(row, meta, { kind: "mr", ...mr });
   return row;
 }
 
@@ -56,13 +97,40 @@ function mentionRow(mention) {
   const meta = element("div", "meta");
   meta.append(element("span", "ref", mention.project));
   meta.append(element("span", "", `${mention.author} · ${relativeTime(mention.createdAt)}`));
-  const doneButton = element("button", "done", "Done");
+  const doneButton = element("button", "small push", "Done");
   doneButton.title = "Mark this to-do as done in GitLab";
   doneButton.addEventListener("click", () => onDone(mention.id, doneButton));
   meta.append(doneButton);
   row.append(meta);
+  summaryArea(row, meta, { kind: "gitlab-mention", ...mention });
   return row;
 }
+
+function jiraRow(mention) {
+  const row = element("li", "item");
+  row.append(link(mention.url, mention.title));
+  if (mention.body) row.append(element("p", "body", mention.body));
+
+  const meta = element("div", "meta");
+  meta.append(element("span", "ref", mention.issueKey));
+  meta.append(element("span", "", `${mention.author} · ${relativeTime(mention.createdAt)}`));
+  row.append(meta);
+  summaryArea(row, meta, { kind: "jira", ...mention });
+  return row;
+}
+
+function mailRow(mail) {
+  const row = element("li", "item");
+  row.append(link(mail.url, mail.title));
+  if (mail.summary) row.append(element("p", "body", mail.summary));
+
+  const meta = element("div", "meta");
+  meta.append(element("span", "", `${mail.author} · ${relativeTime(mail.receivedAt)}`));
+  row.append(meta);
+  return row;
+}
+
+const ROW_MAKERS = { mine: mrRow, reviewing: mrRow, mentions: mentionRow, jira: jiraRow, mail: mailRow };
 
 async function onDone(todoId, button) {
   button.disabled = true;
@@ -72,38 +140,61 @@ async function onDone(todoId, button) {
     await refresh();
   } catch (error) {
     button.disabled = false;
-    showMessage(`Could not mark as done: ${error.message}`, true);
+    showMessage(`Could not mark as done: ${error.message}`, null);
   }
 }
 
-function showMessage(text, isError) {
+function showMessage(text, loginUrl) {
   message.hidden = !text;
-  message.textContent = text ?? "";
-  message.classList.toggle("error", Boolean(isError));
+  message.replaceChildren();
+  if (!text) return;
+  message.append(element("span", "", text));
+  if (!loginUrl || !isSafeLink(loginUrl)) return;
+  const loginButton = element("button", "small push", "Log in");
+  loginButton.addEventListener("click", () => void chrome.tabs.create({ url: loginUrl }));
+  message.append(loginButton);
+}
+
+function tabCount(tab, data) {
+  if (!data) return "";
+  if (tab === "mail") return String(data.unreadCount);
+  return String(TABS[tab].items(data).length);
+}
+
+function footerText(sourceName, data) {
+  if (!data) return "";
+  const updated = `updated ${relativeTime(data.fetchedAt)}`;
+  if (sourceName === "gitlab") return `@${data.username} · ${updated}`;
+  if (sourceName === "jira") return `${data.displayName} · ${updated}`;
+  return `${data.unreadCount} unread · ${updated}`;
 }
 
 function render() {
-  const data = currentState?.data;
-  showMessage(currentState?.error, true);
+  const state = currentState ?? {};
+  for (const tab of tabs) tab.hidden = !state[TABS[tab.dataset.tab].source];
+  if (tabs.find((tab) => tab.dataset.tab === currentTab)?.hidden) {
+    currentTab = tabs.find((tab) => !tab.hidden)?.dataset.tab ?? currentTab;
+  }
 
   for (const tab of tabs) {
     tab.setAttribute("aria-selected", String(tab.dataset.tab === currentTab));
-  }
-  for (const badge of document.querySelectorAll("[data-count]")) {
-    badge.textContent = data ? String(data[badge.dataset.count].length) : "";
+    const source = state[TABS[tab.dataset.tab].source];
+    tab.querySelector(".count").textContent = tabCount(tab.dataset.tab, source?.data);
   }
 
+  const { source: sourceName, items, empty } = TABS[currentTab];
+  const source = state[sourceName];
+  showMessage(state.error ?? source?.error, source?.loginUrl);
+  footer.textContent = footerText(sourceName, source?.data);
   list.replaceChildren();
-  footer.textContent = data ? `@${data.username} · updated ${relativeTime(data.fetchedAt)}` : "";
-  if (!data) return;
+  if (!source?.data) return;
 
-  const items = data[currentTab];
-  if (items.length === 0) {
-    list.append(element("li", "empty", EMPTY_TEXT[currentTab]));
+  const rows = items(source.data);
+  if (rows.length === 0) {
+    list.append(element("li", "empty", empty));
     return;
   }
-  const makeRow = currentTab === "mentions" ? mentionRow : mrRow;
-  list.append(...items.map(makeRow));
+  list.append(...rows.map(ROW_MAKERS[currentTab]));
 }
 
 async function refresh() {
@@ -111,7 +202,7 @@ async function refresh() {
   try {
     currentState = await chrome.runtime.sendMessage({ type: "refresh" });
   } catch (error) {
-    currentState = { data: currentState?.data ?? null, error: error.message };
+    currentState = { ...currentState, error: error.message };
   } finally {
     refreshButton.disabled = false;
   }
@@ -128,10 +219,11 @@ async function init() {
   refreshButton.addEventListener("click", () => void refresh());
   document.getElementById("options").addEventListener("click", () => chrome.runtime.openOptionsPage());
 
+  anthropicKey = (await loadConfig())?.anthropicKey ?? "";
   // Show the saved result at once, then fetch fresh data.
   currentState = await loadDashboard();
   render();
   await refresh();
 }
 
-init().catch((error) => showMessage(error.message, true));
+init().catch((error) => showMessage(error.message, null));

@@ -2,25 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>GitLab MR Board - Options</title>
+  <title>Work Board - Options</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="options">
-  <h1>GitLab MR Board</h1>
+  <h1>Work Board</h1>
   <form id="form">
-    <label>GitLab URL
-      <input id="baseUrl" type="url" required>
-    </label>
-    <label>Personal access token
-      <input id="token" type="password" required autocomplete="off">
-    </label>
-    <p class="hint">
-      Make one in GitLab: <em>User settings → Access tokens</em>.
-      Scope <code>read_api</code> is enough to see the lists.
-      Pick <code>api</code> if you also want the "Done" button on mentions to work.
-    </p>
+    <fieldset>
+      <legend>GitLab</legend>
+      <label>GitLab URL
+        <input id="baseUrl" type="url">
+      </label>
+      <label>Personal access token
+        <input id="token" type="password" autocomplete="off">
+      </label>
+      <p class="hint">
+        Leave the token empty to turn GitLab off.
+        Make one in GitLab: <em>User settings → Access tokens</em>.
+        Scope <code>read_api</code> is enough to see the lists.
+        Pick <code>api</code> if you also want the "Done" button on mentions to work.
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Jira</legend>
+      <label class="check"><input id="jiraEnabled" type="checkbox"> Show Jira comments that mention me</label>
+      <label>Jira URL
+        <input id="jiraUrl" type="url">
+      </label>
+      <p class="hint">
+        No token needed. The extension uses your Jira login in this browser.
+        If you are not logged in, the popup shows a "Log in" button.
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Gmail</legend>
+      <label class="check"><input id="gmailEnabled" type="checkbox"> Show unread Gmail</label>
+      <label>Google account number
+        <input id="gmailAccount" type="number" min="0" max="9" step="1">
+      </label>
+      <p class="hint">
+        No token needed. The extension uses your Google login in this browser.
+        The number is the one in the Gmail address bar: <code>mail.google.com/mail/u/<b>0</b>/</code>.
+        Use 1 if your work account is the second account you signed in with.
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Claude summaries</legend>
+      <label>Anthropic API key
+        <input id="anthropicKey" type="password" autocomplete="off">
+      </label>
+      <p class="hint">
+        Leave empty to turn summaries off. Make a key at <code>console.anthropic.com</code> (you can log in there with Google).
+        A Google login alone cannot be used here: the Claude API only accepts API keys.
+        Each click on "Summarize" sends that one item to Claude and is billed to the key.
+      </p>
+    </fieldset>
+
     <button type="submit">Save and test</button>
-    <p id="status" role="status"></p>
+    <ul id="status" class="status" role="status"></ul>
   </form>
   <script type="module" src="options.js"></script>
 </body>

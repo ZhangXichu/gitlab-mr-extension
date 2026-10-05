@@ -2,17 +2,17 @@
 
 const MENTION_ACTIONS = new Set(["mentioned", "directly_addressed"]);
 
-export function normalizeBaseUrl(input) {
+export function normalizeBaseUrl(input, label = "GitLab URL") {
   const text = (input ?? "").trim();
-  if (!text) throw new Error("GitLab URL is required");
+  if (!text) throw new Error(`${label} is required`);
   let url;
   try {
     url = new URL(text);
   } catch {
-    throw new Error("GitLab URL is not a valid URL");
+    throw new Error(`${label} is not a valid URL`);
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new Error("GitLab URL must start with http:// or https://");
+    throw new Error(`${label} must start with http:// or https://`);
   }
   const path = url.pathname.replace(/\/+$/, "");
   return url.origin + path;
@@ -39,6 +39,7 @@ export function toMrItem(mr) {
     hasConflicts: Boolean(mr.has_conflicts),
     status: mr.detailed_merge_status ?? "",
     comments: mr.user_notes_count ?? 0,
+    description: mr.description ?? "",
   };
 }
 
