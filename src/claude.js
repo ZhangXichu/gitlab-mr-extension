@@ -10,7 +10,8 @@ function describeApiError(error) {
   if (error instanceof Anthropic.PermissionDeniedError) return "This API key is not allowed to use Claude.";
   if (error instanceof Anthropic.RateLimitError) return "Too many requests to Claude. Try again in a minute.";
   if (error instanceof Anthropic.APIConnectionError) return "Could not reach the Claude API.";
-  if (error instanceof Anthropic.APIError) return `Claude API error ${error.status}: ${error.message}`;
+  // error.error is the parsed answer body: { type: "error", error: { type, message } }.
+  if (error instanceof Anthropic.APIError) return `Claude API error ${error.status}: ${error.error?.error?.message ?? error.message}`;
   return error.message;
 }
 
