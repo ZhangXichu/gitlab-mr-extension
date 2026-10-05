@@ -86,3 +86,67 @@ export function isSafeLink(link) {
     return false;
   }
 }
+
+const NOTEABLE_PATHS = { MergeRequest: "merge_requests", Issue: "issues" };
+
+// From my own comment events (newest first): each merge request or issue I commented on, once.
+export function commentedTargets(events, limit) {
+  const byKey = new Map();
+  for (const event of events) {
+    const noteableType = event.note?.noteable_type;
+    if (!NOTEABLE_PATHS[noteableType]) continue;
+    const iid = event.note.noteable_iid;
+    const key = `${event.project_id}/${noteableType}/${iid}`;
+    if (byKey.has(key)) continue;
+    byKey.set(key, { projectId: event.project_id, noteableType, iid, title: event.target_title ?? "" });
+    if (byKey.size >= limit) break;
+  }
+  return [...byKey.values()];
+}
+
+export function noteablePath(noteableType) {
+  return NOTEABLE_PATHS[noteableType];
+}
+
+function isResolved(discussion) {
+  const resolvable = discussion.notes.filter((note) => note.resolvable);
+  return resolvable.length > 0 && resolvable.every((note) => note.resolved);
+}
+
+// Notes by others, after `sinceMs`, in open threads where `username` wrote, posted after their latest note there.
+export function toReplyItems(discussions, target, project, username, sinceMs) {
+  const items = [];
+  for (const discussion of discussions) {
+    if (discussion.individual_note || isResolved(discussion)) continue;
+    const notes = discussion.notes.filter((note) => !note.system);
+    const mine = notes.filter((note) => note.author?.username === username);
+    if (mine.length === 0) continue;
+    const myLatestMs = Math.max(...mine.map((note) => Date.parse(note.created_at)));
+    for (const note of notes) {
+      const createdMs = Date.parse(note.created_at);
+      if (note.author?.username === username || createdMs <= myLatestMs || !(createdMs >= sinceMs)) continue;
+      items.push({
+        id: `reply-${note.id}`,
+        url: `${project.webUrl}/-/${NOTEABLE_PATHS[target.noteableType]}/${target.iid}#note_${note.id}`,
+        title: target.title,
+        targetType: target.noteableType,
+        project: project.name,
+        author: note.author?.name ?? "",
+        body: note.body ?? "",
+        createdAt: note.created_at,
+        reason: "reply",
+      });
+    }
+  }
+  return items;
+}
+
+function noteAnchor(url) {
+  return (url ?? "").match(/#note_\d+$/)?.[0] ?? null;
+}
+
+// A reply that also @mentions me already has a GitLab to-do. Show it once, as the to-do.
+export function dropRepliesWithTodo(replies, mentions) {
+  const todoAnchors = new Set(mentions.map((mention) => noteAnchor(mention.url)).filter(Boolean));
+  return replies.filter((reply) => !todoAnchors.has(noteAnchor(reply.url)));
+}

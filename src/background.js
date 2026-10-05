@@ -43,14 +43,15 @@ async function runRefresh() {
   return state;
 }
 
-// Red "!" when anything failed, so an expired login is noticed. Otherwise the number of GitLab mentions.
+// Red "!" when anything failed, so an expired login is noticed. Otherwise the number of GitLab mentions and replies.
 async function updateBadge(state) {
   const sources = [state.gitlab, state.jira, state.gmail];
   if (state.error || sources.some((source) => source?.error)) {
     await setBadge("!", BADGE_ERROR_COLOR);
     return;
   }
-  const count = state.gitlab?.data?.mentions.length ?? 0;
+  const gitlab = state.gitlab?.data;
+  const count = (gitlab?.mentions.length ?? 0) + (gitlab?.replies?.length ?? 0);
   await setBadge(count > 0 ? String(count) : "", BADGE_COUNT_COLOR);
 }
 

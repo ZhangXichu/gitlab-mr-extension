@@ -1,4 +1,4 @@
-import { relativeTime, isSafeLink } from "./lib.js";
+import { relativeTime, isSafeLink, mergeUniqueById } from "./lib.js";
 import { isChatNotification } from "./gmail-lib.js";
 import { markTodoDone } from "./api.js";
 import { loadConfig, loadDashboard } from "./storage.js";
@@ -13,7 +13,12 @@ const tabs = [...document.querySelectorAll("[role=tab]")];
 const TABS = {
   mine: { source: "gitlab", items: (data) => data.mine, empty: "You have no open merge requests." },
   reviewing: { source: "gitlab", items: (data) => data.reviewing, empty: "Nobody is waiting for your review." },
-  mentions: { source: "gitlab", items: (data) => data.mentions, empty: "No pending GitLab mentions." },
+  // `?? []`: data saved by version 1.3.0 has no `replies` until the first refresh.
+  mentions: {
+    source: "gitlab",
+    items: (data) => mergeUniqueById([data.mentions, data.replies ?? []], "createdAt"),
+    empty: "No pending GitLab mentions or replies.",
+  },
   // `?? []`: data saved by version 1.1.0 has no `items` until the first refresh.
   jira: { source: "jira", items: (data) => data.items ?? [], empty: "No Jira or Confluence mentions or replies in the last 14 days." },
   mail: { source: "gmail", items: (data) => data.items, empty: "No unread mail." },
@@ -101,11 +106,15 @@ function mentionRow(mention) {
 
   const meta = element("div", "meta");
   meta.append(element("span", "ref", mention.project));
+  meta.append(element("span", "tag", mention.reason === "reply" ? "Reply" : "Mention"));
   meta.append(element("span", "", `${mention.author} · ${relativeTime(mention.createdAt)}`));
-  const doneButton = element("button", "small push", "Done");
-  doneButton.title = "Mark this to-do as done in GitLab";
-  doneButton.addEventListener("click", () => onDone(mention.id, doneButton));
-  meta.append(doneButton);
+  // A reply has no GitLab to-do to mark as done. It drops off once you answer in the thread.
+  if (mention.reason !== "reply") {
+    const doneButton = element("button", "small push", "Done");
+    doneButton.title = "Mark this to-do as done in GitLab";
+    doneButton.addEventListener("click", () => onDone(mention.id, doneButton));
+    meta.append(doneButton);
+  }
   row.append(meta);
   summaryArea(row, meta, { kind: "gitlab-mention", ...mention });
   return row;

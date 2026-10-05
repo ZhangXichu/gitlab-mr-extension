@@ -72,6 +72,19 @@ test("buildSummaryPrompt for a GitLab mention includes the note text", () => {
   assert.match(prompt, /please review the thresholds/);
 });
 
+test("buildSummaryPrompt for a GitLab reply says it answers the reader's comment", () => {
+  const prompt = buildSummaryPrompt({
+    kind: "gitlab-mention",
+    reason: "reply",
+    title: "Fix crash",
+    project: "SDK / iface",
+    author: "Bob",
+    body: "OK, but please add a test.",
+  });
+  assert.match(prompt, /reply to the reader's comment in a GitLab thread/);
+  assert.match(prompt, /please add a test/);
+});
+
 test("buildSummaryPrompt rejects an unknown kind", () => {
   assert.throws(() => buildSummaryPrompt({ kind: "fax" }), /Unknown item kind/);
 });

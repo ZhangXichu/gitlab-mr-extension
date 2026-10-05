@@ -27,7 +27,9 @@ export function buildSummaryPrompt(item) {
       ]);
     case "gitlab-mention":
       return itemBlock([
-        "Type: GitLab comment that mentions the reader",
+        item.reason === "reply"
+          ? "Type: GitLab comment, a reply to the reader's comment in a GitLab thread"
+          : "Type: GitLab comment that mentions the reader",
         `Project: ${item.project}`,
         `On: ${item.title}`,
         `Written by: ${item.author}`,

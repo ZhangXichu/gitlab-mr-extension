@@ -4,7 +4,9 @@ A Chrome extension that shows, in one popup:
 
 - **My MRs** – open GitLab merge requests you created or are assigned to.
 - **To review** – open merge requests where you are a reviewer.
-- **Mentions** – pending GitLab to-do items where someone wrote `@you`.
+- **Mentions** – pending GitLab to-do items where someone wrote `@you`, plus replies to you: comments by
+  others in a GitLab thread you wrote in, posted after your latest comment there (last 14 days, open
+  threads only). A reply drops off once you answer in the thread.
 - **Jira** – from the last 14 days: Jira comments where someone else @mentioned you or replied after your
   latest comment on that issue (once you answer, the reply drops off the list), new Jira issues whose
   description mentions you, and Confluence pages and page comments that mention you.
@@ -13,7 +15,7 @@ A Chrome extension that shows, in one popup:
 - **Summarize** – a button on MRs and mentions that asks Claude for a two or three sentence summary.
 
 Each part can be turned on or off in Options. It checks every 5 minutes.
-The icon badge shows how many GitLab mentions are waiting, or a red `!` when something failed
+The icon badge shows how many GitLab mentions and replies are waiting, or a red `!` when something failed
 (for example, your Jira or Google login ran out).
 
 ## How each part logs in
@@ -30,6 +32,8 @@ Limits to know:
 - Jira: only comments are searched, not issue descriptions. Replies are found on issues you watch;
   Jira makes you a watcher when you comment, unless you turned that off in your Jira settings. On an issue with more than 100 comments,
   only the newest 100 are checked.
+- GitLab replies: found on the 20 merge requests and issues you commented on most recently. A plain
+  top-level comment that answers you without replying in your thread is not a reply, unless it @mentions you.
 - Jira descriptions: an issue counts only if it was created in the last 14 days. A mention added later
   by editing an older issue is not found.
 - Confluence: the list shows the text around the mention and who last edited the page.
