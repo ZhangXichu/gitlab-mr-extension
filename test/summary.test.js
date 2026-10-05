@@ -45,6 +45,20 @@ test("buildSummaryPrompt for a Jira reply says it answers the reader's comment",
   assert.match(prompt, /a117 \+ p1 \+ p2/);
 });
 
+test("buildSummaryPrompt for a Confluence page names the space", () => {
+  const prompt = buildSummaryPrompt({
+    kind: "jira",
+    reason: "page",
+    space: "Technology Division",
+    title: "Biometric SDKs",
+    author: "Igor",
+    body: "Team members: @Xichu Zhang",
+  });
+  assert.match(prompt, /Confluence/);
+  assert.match(prompt, /Technology Division/);
+  assert.match(prompt, /Biometric SDKs/);
+});
+
 test("buildSummaryPrompt for a GitLab mention includes the note text", () => {
   const prompt = buildSummaryPrompt({
     kind: "gitlab-mention",

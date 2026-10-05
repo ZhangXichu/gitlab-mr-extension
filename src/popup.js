@@ -1,4 +1,5 @@
 import { relativeTime, isSafeLink } from "./lib.js";
+import { isChatNotification } from "./gmail-lib.js";
 import { markTodoDone } from "./api.js";
 import { loadConfig, loadDashboard } from "./storage.js";
 
@@ -14,8 +15,9 @@ const TABS = {
   reviewing: { source: "gitlab", items: (data) => data.reviewing, empty: "Nobody is waiting for your review." },
   mentions: { source: "gitlab", items: (data) => data.mentions, empty: "No pending GitLab mentions." },
   // `?? []`: data saved by version 1.1.0 has no `items` until the first refresh.
-  jira: { source: "jira", items: (data) => data.items ?? [], empty: "No Jira mentions or replies in the last 14 days." },
+  jira: { source: "jira", items: (data) => data.items ?? [], empty: "No Jira or Confluence mentions or replies in the last 14 days." },
   mail: { source: "gmail", items: (data) => data.items, empty: "No unread mail." },
+  chat: { source: "gmail", items: (data) => data.items.filter(isChatNotification), empty: "No unread Google Chat notification emails." },
 };
 
 const SOURCE_LABELS = [["gitlab", "GitLab"], ["jira", "Jira"], ["gmail", "Gmail"]];
@@ -109,14 +111,16 @@ function mentionRow(mention) {
   return row;
 }
 
+const JIRA_TAGS = { mention: "Mention", reply: "Reply", description: "Description", page: "Confluence" };
+
 function jiraRow(mention) {
   const row = element("li", "item");
   row.append(link(mention.url, mention.title));
   if (mention.body) row.append(element("p", "body", mention.body));
 
   const meta = element("div", "meta");
-  meta.append(element("span", "ref", mention.issueKey));
-  meta.append(element("span", "tag", mention.reason === "reply" ? "Reply" : "Mention"));
+  meta.append(element("span", "ref", mention.issueKey ?? mention.space));
+  meta.append(element("span", "tag", JIRA_TAGS[mention.reason] ?? "Mention"));
   meta.append(element("span", "", `${mention.author} · ${relativeTime(mention.createdAt)}`));
   row.append(meta);
   summaryArea(row, meta, { kind: "jira", ...mention });
@@ -134,7 +138,7 @@ function mailRow(mail) {
   return row;
 }
 
-const ROW_MAKERS = { mine: mrRow, reviewing: mrRow, mentions: mentionRow, jira: jiraRow, mail: mailRow };
+const ROW_MAKERS = { mine: mrRow, reviewing: mrRow, mentions: mentionRow, jira: jiraRow, mail: mailRow, chat: mailRow };
 
 async function onDone(todoId, button) {
   button.disabled = true;

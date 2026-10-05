@@ -5,9 +5,11 @@ A Chrome extension that shows, in one popup:
 - **My MRs** – open GitLab merge requests you created or are assigned to.
 - **To review** – open merge requests where you are a reviewer.
 - **Mentions** – pending GitLab to-do items where someone wrote `@you`.
-- **Jira** – Jira comments from the last 14 days where someone else @mentioned you, or replied after your
-  latest comment on that issue. Once you answer, the reply drops off the list.
+- **Jira** – from the last 14 days: Jira comments where someone else @mentioned you or replied after your
+  latest comment on that issue (once you answer, the reply drops off the list), new Jira issues whose
+  description mentions you, and Confluence pages and page comments that mention you.
 - **Mail** – your unread Gmail inbox.
+- **Chat** – unread emails from Google Chat about mentions and direct messages you have not read.
 - **Summarize** – a button on MRs and mentions that asks Claude for a two or three sentence summary.
 
 Each part can be turned on or off in Options. It checks every 5 minutes.
@@ -28,6 +30,12 @@ Limits to know:
 - Jira: only comments are searched, not issue descriptions. Replies are found on issues you watch;
   Jira makes you a watcher when you comment, unless you turned that off in your Jira settings. On an issue with more than 100 comments,
   only the newest 100 are checked.
+- Jira descriptions: an issue counts only if it was created in the last 14 days. A mention added later
+  by editing an older issue is not found.
+- Confluence: the list shows the text around the mention and who last edited the page.
+- Google Chat has no feed the extension can read with your login, so the Chat tab uses Chat's notification
+  emails instead. Turn them on in Google Chat under Settings → Email notifications. Google sends them
+  only after a delay and only for messages you have not seen, and they count only while unread in your inbox.
 - Gmail uses Gmail's unread-mail feed. It shows at most about 20 unread messages and only a short preview of each.
   Google does not document this feed and could remove it.
 - Summarize sends that one item's text to the Claude API (`claude-opus-5-5`, low effort). It runs only when you click,

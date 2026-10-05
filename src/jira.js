@@ -1,4 +1,6 @@
 import { buildJiraSearchUrl, toJiraItems } from "./jira-lib.js";
+import { buildConfluenceSearchUrl, toConfluenceItems } from "./confluence-lib.js";
+import { mergeUniqueById } from "./lib.js";
 import { LoginNeededError } from "./errors.js";
 
 const REQUEST_TIMEOUT_MS = 15000;
@@ -18,7 +20,7 @@ async function getJson(siteUrl, url) {
     throw new LoginNeededError("Not logged in to Jira. Log in, then refresh.", siteUrl);
   }
   if (!response.ok) {
-    throw new Error(`Jira returned ${response.status} for ${new URL(url).pathname}`);
+    throw new Error(`Atlassian returned ${response.status} for ${new URL(url).pathname}`);
   }
   return response.json();
 }
@@ -32,15 +34,20 @@ async function withRecentComments(siteUrl, issue) {
   return { ...issue, fields: { ...issue.fields, comment: { ...comment, comments: page.comments ?? [] } } };
 }
 
+// Jira issues and Confluence pages, both on the same Atlassian site and the same browser login.
 export async function fetchJiraMentions(jiraConfig) {
   const { siteUrl } = jiraConfig;
-  const me = await getJson(siteUrl, `${siteUrl}/rest/api/3/myself`);
-  const result = await getJson(siteUrl, buildJiraSearchUrl(siteUrl, JIRA_MENTION_DAYS));
-  const issues = await Promise.all((result.issues ?? []).map((issue) => withRecentComments(siteUrl, issue)));
+  const [me, search, pages] = await Promise.all([
+    getJson(siteUrl, `${siteUrl}/rest/api/3/myself`),
+    getJson(siteUrl, buildJiraSearchUrl(siteUrl, JIRA_MENTION_DAYS)),
+    getJson(siteUrl, buildConfluenceSearchUrl(siteUrl, JIRA_MENTION_DAYS)),
+  ]);
+  const issues = await Promise.all((search.issues ?? []).map((issue) => withRecentComments(siteUrl, issue)));
   const sinceMs = Date.now() - JIRA_MENTION_DAYS * DAY_MS;
+  const jiraItems = toJiraItems(issues, siteUrl, me.accountId, sinceMs);
   return {
     displayName: me.displayName ?? "",
     fetchedAt: new Date().toISOString(),
-    items: toJiraItems(issues, siteUrl, me.accountId, sinceMs),
+    items: mergeUniqueById([jiraItems, toConfluenceItems(pages, siteUrl)], "createdAt"),
   };
 }

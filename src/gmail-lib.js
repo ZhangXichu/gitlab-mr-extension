@@ -3,6 +3,8 @@
 // so the feed is read with regular expressions. Its format is small and fixed.
 
 const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+// Sender of Google Chat's emails about mentions and direct messages you have not read.
+const CHAT_NOTIFICATION_SENDER = "chat-noreply@google.com";
 
 function decodeEntities(text) {
   return text.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, (whole, name) => {
@@ -26,12 +28,14 @@ function readHref(xml) {
 
 function toMailItem(entryXml) {
   const authorXml = readTag(entryXml, "author");
+  const authorEmail = readTag(authorXml, "email");
   return {
     id: readTag(entryXml, "id"),
     title: readTag(entryXml, "title") || "(no subject)",
     summary: readTag(entryXml, "summary"),
     url: readHref(entryXml),
-    author: readTag(authorXml, "name") || readTag(authorXml, "email"),
+    author: readTag(authorXml, "name") || authorEmail,
+    authorEmail,
     receivedAt: readTag(entryXml, "issued") || readTag(entryXml, "modified"),
   };
 }
@@ -51,4 +55,9 @@ export function gmailFeedUrl(accountIndex) {
 
 export function gmailInboxUrl(accountIndex) {
   return `https://mail.google.com/mail/u/${accountIndex}/#inbox`;
+}
+
+// `?? ""`: mail saved by version 1.2.0 has no authorEmail until the first refresh.
+export function isChatNotification(mail) {
+  return (mail.authorEmail ?? "").toLowerCase() === CHAT_NOTIFICATION_SENDER;
 }

@@ -26,7 +26,7 @@
 
     <fieldset>
       <legend>Jira</legend>
-      <label class="check"><input id="jiraEnabled" type="checkbox"> Show Jira comments that mention me or reply to me</label>
+      <label class="check"><input id="jiraEnabled" type="checkbox"> Show Jira and Confluence mentions, and Jira replies to me</label>
       <label>Jira URL
         <input id="jiraUrl" type="url">
       </label>
@@ -38,7 +38,7 @@
 
     <fieldset>
       <legend>Gmail</legend>
-      <label class="check"><input id="gmailEnabled" type="checkbox"> Show unread Gmail</label>
+      <label class="check"><input id="gmailEnabled" type="checkbox"> Show unread Gmail and Google Chat notification emails</label>
       <label>Google account number
         <input id="gmailAccount" type="number" min="0" max="9" step="1">
       </label>
@@ -46,6 +46,11 @@
         No token needed. The extension uses your Google login in this browser.
         The number is the one in the Gmail address bar: <code>mail.google.com/mail/u/<b>0</b>/</code>.
         Use 1 if your work account is the second account you signed in with.
+      </p>
+      <p class="hint">
+        The Chat tab lists the emails Google Chat sends about mentions and direct messages you have not read.
+        Turn them on in Google Chat: <em>Settings → Email notifications</em>.
+        Google sends them only after a delay, so they show missed messages, not new ones.
       </p>
     </fieldset>
 

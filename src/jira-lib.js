@@ -8,8 +8,10 @@ const INLINE_CONTAINERS = new Set(["paragraph", "heading", "codeBlock"]);
 export function buildJiraSearchUrl(siteUrl, days) {
   const query = new URLSearchParams({
     // Jira makes you a watcher when you comment, so "watcher" finds the issues where replies to you can be.
-    jql: `(comment ~ currentUser() OR watcher = currentUser()) AND updated >= -${days}d ORDER BY updated DESC`,
-    fields: "summary,comment",
+    jql:
+      "(comment ~ currentUser() OR description ~ currentUser() OR watcher = currentUser()) " +
+      `AND updated >= -${days}d ORDER BY updated DESC`,
+    fields: "summary,comment,description,created,reporter",
     maxResults: String(PAGE_SIZE),
   });
   return `${siteUrl}/rest/api/3/search/jql?${query}`;
@@ -58,10 +60,33 @@ function reasonFor(comment, accountId, myLatestMs) {
   return null;
 }
 
-// Comments written by someone else, after `sinceMs`, that @mention `accountId` or reply to them. Newest first.
+// An issue created after `sinceMs` by someone else, whose description @mentions `accountId`.
+// The issue's created date stands in for the mention date: a mention added by a later edit
+// to an older issue is not found.
+function descriptionItem(issue, siteUrl, accountId, sinceMs) {
+  const fields = issue.fields ?? {};
+  if (fields.reporter?.accountId === accountId) return null;
+  if (!(Date.parse(fields.created) >= sinceMs)) return null;
+  if (!mentionsAccount(fields.description, accountId)) return null;
+  return {
+    id: `${issue.key}#description`,
+    issueKey: issue.key,
+    title: fields.summary ?? "",
+    url: `${siteUrl}/browse/${encodeURIComponent(issue.key)}`,
+    author: fields.reporter?.displayName ?? "",
+    reason: "description",
+    body: adfToText(fields.description),
+    createdAt: fields.created,
+  };
+}
+
+// Comments written by someone else, after `sinceMs`, that @mention `accountId` or reply to them,
+// plus recent issues whose description mentions them. Newest first.
 export function toJiraItems(issues, siteUrl, accountId, sinceMs) {
   const items = [];
   for (const issue of issues) {
+    const fromDescription = descriptionItem(issue, siteUrl, accountId, sinceMs);
+    if (fromDescription) items.push(fromDescription);
     const comments = issue.fields?.comment?.comments ?? [];
     const myLatestMs = latestCommentTime(comments, accountId);
     for (const comment of comments) {

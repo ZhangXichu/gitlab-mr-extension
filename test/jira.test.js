@@ -141,13 +141,49 @@ test("toJiraItems lists a comment that is both a reply and a mention once, as a 
   assert.deepEqual(items.map((item) => [item.id, item.reason]), [["A-1#2", "mention"]]);
 });
 
+test("toJiraItems keeps a recent issue whose description mentions me", () => {
+  const since = Date.parse("2026-10-01T00:00:00Z");
+  const issues = [
+    { key: "BSDK-900", fields: {
+      summary: "New models", created: "2026-10-03T09:00:00.000+0200",
+      reporter: { accountId: OTHER, displayName: "Pavel" },
+      description: doc(paragraph(text("Owner: "), mention(ME, "Xichu Zhang"))),
+    } },
+    // Description mentions me, but the issue is older than the cut-off.
+    { key: "BSDK-18", fields: {
+      summary: "Old", created: "2024-11-13T06:24:21.146+0100",
+      reporter: { accountId: OTHER, displayName: "Tomas" },
+      description: doc(paragraph(mention(ME, "Xichu Zhang"))),
+    } },
+    // I wrote this description myself.
+    { key: "BSDK-901", fields: {
+      summary: "Mine", created: "2026-10-03T09:00:00.000+0200",
+      reporter: { accountId: ME, displayName: "Xichu Zhang" },
+      description: doc(paragraph(mention(ME, "Xichu Zhang"))),
+    } },
+  ];
+  assert.deepEqual(toJiraItems(issues, "https://acme.atlassian.net", ME, since), [
+    {
+      id: "BSDK-900#description",
+      issueKey: "BSDK-900",
+      title: "New models",
+      url: "https://acme.atlassian.net/browse/BSDK-900",
+      author: "Pavel",
+      reason: "description",
+      body: "Owner: @Xichu Zhang",
+      createdAt: "2026-10-03T09:00:00.000+0200",
+    },
+  ]);
+});
+
 test("buildJiraSearchUrl asks for recent issues that mention me or that I watch", () => {
   const url = new URL(buildJiraSearchUrl("https://acme.atlassian.net", 14));
   assert.equal(url.origin + url.pathname, "https://acme.atlassian.net/rest/api/3/search/jql");
   assert.equal(
     url.searchParams.get("jql"),
-    "(comment ~ currentUser() OR watcher = currentUser()) AND updated >= -14d ORDER BY updated DESC",
+    "(comment ~ currentUser() OR description ~ currentUser() OR watcher = currentUser()) " +
+      "AND updated >= -14d ORDER BY updated DESC",
   );
-  assert.equal(url.searchParams.get("fields"), "summary,comment");
+  assert.equal(url.searchParams.get("fields"), "summary,comment,description,created,reporter");
   assert.equal(url.searchParams.get("maxResults"), "50");
 });

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseGmailFeed, gmailFeedUrl, gmailInboxUrl } from "../src/gmail-lib.js";
+import { parseGmailFeed, gmailFeedUrl, gmailInboxUrl, isChatNotification } from "../src/gmail-lib.js";
 
 const FEED = `<?xml version="1.0" encoding="UTF-8"?><feed version="0.3" xmlns="http://purl.org/atom/ns#">
 <title>Gmail - Inbox for me@acme.com</title>
@@ -37,6 +37,7 @@ test("parseGmailFeed reads the unread count and each unread message", () => {
         summary: 'Hi, the build "nightly" failed – see log',
         url: "https://mail.google.com/mail?account_id=me@acme.com&message_id=18a&view=conv&extsrc=atom",
         author: "Ana Novak",
+        authorEmail: "ana@acme.com",
         receivedAt: "2026-10-05T09:00:00Z",
       },
       {
@@ -45,6 +46,7 @@ test("parseGmailFeed reads the unread count and each unread message", () => {
         summary: "",
         url: "https://mail.google.com/mail?message_id=18b",
         author: "bot@acme.com",
+        authorEmail: "bot@acme.com",
         receivedAt: "2026-10-04T09:00:00Z",
       },
     ],
@@ -65,4 +67,11 @@ test("gmailFeedUrl and gmailInboxUrl use the chosen Google account number", () =
   assert.equal(gmailFeedUrl(0), "https://mail.google.com/mail/u/0/feed/atom");
   assert.equal(gmailFeedUrl(2), "https://mail.google.com/mail/u/2/feed/atom");
   assert.equal(gmailInboxUrl(1), "https://mail.google.com/mail/u/1/#inbox");
+});
+
+test("isChatNotification picks out Google Chat notification emails", () => {
+  assert.equal(isChatNotification({ authorEmail: "chat-noreply@google.com" }), true);
+  assert.equal(isChatNotification({ authorEmail: "Chat-NoReply@Google.com" }), true);
+  assert.equal(isChatNotification({ authorEmail: "ana@acme.com" }), false);
+  assert.equal(isChatNotification({ authorEmail: "" }), false);
 });

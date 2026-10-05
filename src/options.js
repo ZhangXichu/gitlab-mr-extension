@@ -115,7 +115,7 @@ async function onSubmit(event) {
   const state = await chrome.runtime.sendMessage({ type: "refresh" });
   const lines = [
     sourceLine("GitLab", state.gitlab, (data) => `signed in as @${data.username}`),
-    sourceLine("Jira", state.jira, (data) => `logged in as ${data.displayName}, ${data.items.length} mentions and replies`),
+    sourceLine("Jira", state.jira, (data) => `logged in as ${data.displayName}, ${data.items.length} items (Jira and Confluence)`),
     sourceLine("Gmail", state.gmail, (data) => `${data.unreadCount} unread`),
     config.anthropicKey ? statusLine("Claude: API key works", false, null) : null,
   ].filter(Boolean);

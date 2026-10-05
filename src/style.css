@@ -17,7 +17,7 @@ button { font: inherit; color: inherit; background: none; border: 1px solid var(
 button:disabled { opacity: 0.5; cursor: default; }
 a { color: inherit; }
 
-.popup { width: 540px; }
+.popup { width: 600px; }
 [hidden] { display: none !important; }
 .popup header { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--line); }
 .popup nav { display: flex; gap: 4px; }
