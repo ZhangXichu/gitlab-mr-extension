@@ -1,4 +1,4 @@
-import { buildJiraSearchUrl, toJiraMentionItems } from "./jira-lib.js";
+import { buildJiraSearchUrl, toJiraItems } from "./jira-lib.js";
 import { LoginNeededError } from "./errors.js";
 
 const REQUEST_TIMEOUT_MS = 15000;
@@ -41,6 +41,6 @@ export async function fetchJiraMentions(jiraConfig) {
   return {
     displayName: me.displayName ?? "",
     fetchedAt: new Date().toISOString(),
-    mentions: toJiraMentionItems(issues, siteUrl, me.accountId, sinceMs),
+    items: toJiraItems(issues, siteUrl, me.accountId, sinceMs),
   };
 }

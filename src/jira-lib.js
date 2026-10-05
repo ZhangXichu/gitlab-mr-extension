@@ -7,7 +7,8 @@ const INLINE_CONTAINERS = new Set(["paragraph", "heading", "codeBlock"]);
 
 export function buildJiraSearchUrl(siteUrl, days) {
   const query = new URLSearchParams({
-    jql: `comment ~ currentUser() AND updated >= -${days}d ORDER BY updated DESC`,
+    // Jira makes you a watcher when you comment, so "watcher" finds the issues where replies to you can be.
+    jql: `(comment ~ currentUser() OR watcher = currentUser()) AND updated >= -${days}d ORDER BY updated DESC`,
     fields: "summary,comment",
     maxResults: String(PAGE_SIZE),
   });
@@ -44,21 +45,37 @@ function mentionsAccount(node, accountId) {
   return (node.content ?? []).some((child) => mentionsAccount(child, accountId));
 }
 
-// Comments written by someone else, after `sinceMs`, that @mention `accountId`. Newest first.
-export function toJiraMentionItems(issues, siteUrl, accountId, sinceMs) {
+function latestCommentTime(comments, accountId) {
+  const mine = comments.filter((comment) => comment.author?.accountId === accountId);
+  return Math.max(-Infinity, ...mine.map((comment) => Date.parse(comment.created)));
+}
+
+// Why a comment by someone else is shown: it @mentions me, or it came after my latest comment
+// on the issue. null means it is not for me. With no comment of mine, myLatestMs is -Infinity: no replies.
+function reasonFor(comment, accountId, myLatestMs) {
+  if (mentionsAccount(comment.body, accountId)) return "mention";
+  if (Number.isFinite(myLatestMs) && Date.parse(comment.created) > myLatestMs) return "reply";
+  return null;
+}
+
+// Comments written by someone else, after `sinceMs`, that @mention `accountId` or reply to them. Newest first.
+export function toJiraItems(issues, siteUrl, accountId, sinceMs) {
   const items = [];
   for (const issue of issues) {
     const comments = issue.fields?.comment?.comments ?? [];
+    const myLatestMs = latestCommentTime(comments, accountId);
     for (const comment of comments) {
       if (comment.author?.accountId === accountId) continue;
       if (!(Date.parse(comment.created) >= sinceMs)) continue;
-      if (!mentionsAccount(comment.body, accountId)) continue;
+      const reason = reasonFor(comment, accountId, myLatestMs);
+      if (!reason) continue;
       items.push({
         id: `${issue.key}#${comment.id}`,
         issueKey: issue.key,
         title: issue.fields?.summary ?? "",
         url: `${siteUrl}/browse/${encodeURIComponent(issue.key)}?focusedCommentId=${encodeURIComponent(comment.id)}`,
         author: comment.author?.displayName ?? "",
+        reason,
         body: adfToText(comment.body),
         createdAt: comment.created,
       });

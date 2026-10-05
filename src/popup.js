@@ -13,7 +13,8 @@ const TABS = {
   mine: { source: "gitlab", items: (data) => data.mine, empty: "You have no open merge requests." },
   reviewing: { source: "gitlab", items: (data) => data.reviewing, empty: "Nobody is waiting for your review." },
   mentions: { source: "gitlab", items: (data) => data.mentions, empty: "No pending GitLab mentions." },
-  jira: { source: "jira", items: (data) => data.mentions, empty: "No Jira mentions in the last 14 days." },
+  // `?? []`: data saved by version 1.1.0 has no `items` until the first refresh.
+  jira: { source: "jira", items: (data) => data.items ?? [], empty: "No Jira mentions or replies in the last 14 days." },
   mail: { source: "gmail", items: (data) => data.items, empty: "No unread mail." },
 };
 
@@ -113,6 +114,7 @@ function jiraRow(mention) {
 
   const meta = element("div", "meta");
   meta.append(element("span", "ref", mention.issueKey));
+  meta.append(element("span", "tag", mention.reason === "reply" ? "Reply" : "Mention"));
   meta.append(element("span", "", `${mention.author} · ${relativeTime(mention.createdAt)}`));
   row.append(meta);
   summaryArea(row, meta, { kind: "jira", ...mention });

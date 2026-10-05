@@ -29,7 +29,9 @@ export function buildSummaryPrompt(item) {
       ]);
     case "jira":
       return itemBlock([
-        "Type: Jira comment that mentions the reader",
+        item.reason === "reply"
+          ? "Type: Jira comment, a reply to the reader's earlier comment on this issue"
+          : "Type: Jira comment that mentions the reader",
         `Issue: ${item.issueKey} ${item.title}`,
         `Written by: ${item.author}`,
         `Comment:\n${item.body}`,

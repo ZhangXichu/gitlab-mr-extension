@@ -20,6 +20,7 @@ test("buildSummaryPrompt for a merge request includes title, reference and descr
 test("buildSummaryPrompt for a Jira mention includes issue key, title and the comment", () => {
   const prompt = buildSummaryPrompt({
     kind: "jira",
+    reason: "mention",
     issueKey: "BSDK-785",
     title: "Parser matches no metrics",
     author: "Vaclav",
@@ -29,6 +30,19 @@ test("buildSummaryPrompt for a Jira mention includes issue key, title and the co
   assert.match(prompt, /BSDK-785/);
   assert.match(prompt, /Parser matches no metrics/);
   assert.match(prompt, /all tests passed correctly/);
+});
+
+test("buildSummaryPrompt for a Jira reply says it answers the reader's comment", () => {
+  const prompt = buildSummaryPrompt({
+    kind: "jira",
+    reason: "reply",
+    issueKey: "BSDK-802",
+    title: "Age models",
+    author: "Pavel",
+    body: "1. a117 + p1 + p2",
+  });
+  assert.match(prompt, /reply to the reader's earlier comment/);
+  assert.match(prompt, /a117 \+ p1 \+ p2/);
 });
 
 test("buildSummaryPrompt for a GitLab mention includes the note text", () => {

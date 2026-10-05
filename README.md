@@ -5,7 +5,8 @@ A Chrome extension that shows, in one popup:
 - **My MRs** – open GitLab merge requests you created or are assigned to.
 - **To review** – open merge requests where you are a reviewer.
 - **Mentions** – pending GitLab to-do items where someone wrote `@you`.
-- **Jira** – Jira comments from the last 14 days where someone else @mentioned you.
+- **Jira** – Jira comments from the last 14 days where someone else @mentioned you, or replied after your
+  latest comment on that issue. Once you answer, the reply drops off the list.
 - **Mail** – your unread Gmail inbox.
 - **Summarize** – a button on MRs and mentions that asks Claude for a two or three sentence summary.
 
@@ -24,7 +25,8 @@ The icon badge shows how many GitLab mentions are waiting, or a red `!` when som
 
 Limits to know:
 
-- Jira: only comments are searched, not issue descriptions. On an issue with more than 100 comments,
+- Jira: only comments are searched, not issue descriptions. Replies are found on issues you watch;
+  Jira makes you a watcher when you comment, unless you turned that off in your Jira settings. On an issue with more than 100 comments,
   only the newest 100 are checked.
 - Gmail uses Gmail's unread-mail feed. It shows at most about 20 unread messages and only a short preview of each.
   Google does not document this feed and could remove it.
