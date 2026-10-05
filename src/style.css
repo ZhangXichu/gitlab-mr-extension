@@ -24,7 +24,10 @@ a { color: inherit; }
 .popup nav button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
 .tools { display: flex; gap: 4px; }
 .count { font-weight: 600; }
-.message { display: flex; gap: 8px; align-items: center; margin: 8px; padding: 6px 8px; border-radius: 4px; background: var(--tag); color: var(--error); }
+.message-line { display: flex; gap: 8px; align-items: center; }
+.message-line + .message-line { margin-top: 4px; }
+.count.error { color: var(--error); }
+.message { margin: 8px; padding: 6px 8px; border-radius: 4px; background: var(--tag); color: var(--error); }
 .list { list-style: none; margin: 0; padding: 0; max-height: 480px; overflow-y: auto; }
 .item { padding: 8px 10px; border-bottom: 1px solid var(--line); }
 .item .title { font-weight: 600; text-decoration: none; display: block; }

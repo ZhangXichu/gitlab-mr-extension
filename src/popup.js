@@ -18,6 +18,8 @@ const TABS = {
   mail: { source: "gmail", items: (data) => data.items, empty: "No unread mail." },
 };
 
+const SOURCE_LABELS = [["gitlab", "GitLab"], ["jira", "Jira"], ["gmail", "Gmail"]];
+
 let currentTab = "mine";
 let currentState = null;
 let anthropicKey = "";
@@ -142,19 +144,33 @@ async function onDone(todoId, button) {
     await refresh();
   } catch (error) {
     button.disabled = false;
-    showMessage(`Could not mark as done: ${error.message}`, null);
+    showMessages([{ text: `Could not mark as done: ${error.message}`, loginUrl: null }]);
   }
 }
 
-function showMessage(text, loginUrl) {
-  message.hidden = !text;
-  message.replaceChildren();
-  if (!text) return;
-  message.append(element("span", "", text));
-  if (!loginUrl || !isSafeLink(loginUrl)) return;
-  const loginButton = element("button", "small push", "Log in");
-  loginButton.addEventListener("click", () => void chrome.tabs.create({ url: loginUrl }));
-  message.append(loginButton);
+// problems is a list of { text, loginUrl }. A loginUrl adds a "Log in" button to that line.
+function showMessages(problems) {
+  message.hidden = problems.length === 0;
+  message.replaceChildren(...problems.map(({ text, loginUrl }) => {
+    const line = element("div", "message-line");
+    line.append(element("span", "", text));
+    if (loginUrl && isSafeLink(loginUrl)) {
+      const loginButton = element("button", "small push", "Log in");
+      loginButton.addEventListener("click", () => void chrome.tabs.create({ url: loginUrl }));
+      line.append(loginButton);
+    }
+    return line;
+  }));
+}
+
+// Errors from every source, not only the open tab, so a failing source is never hidden.
+function currentProblems(state) {
+  const problems = state.error ? [{ text: state.error, loginUrl: null }] : [];
+  for (const [name, label] of SOURCE_LABELS) {
+    const source = state[name];
+    if (source?.error) problems.push({ text: `${label}: ${source.error}`, loginUrl: source.loginUrl });
+  }
+  return problems;
 }
 
 function tabCount(tab, data) {
@@ -181,12 +197,15 @@ function render() {
   for (const tab of tabs) {
     tab.setAttribute("aria-selected", String(tab.dataset.tab === currentTab));
     const source = state[TABS[tab.dataset.tab].source];
-    tab.querySelector(".count").textContent = tabCount(tab.dataset.tab, source?.data);
+    const count = tab.querySelector(".count");
+    // "!" instead of a number when the last refresh failed: the number would be old.
+    count.textContent = source?.error ? "!" : tabCount(tab.dataset.tab, source?.data);
+    count.classList.toggle("error", Boolean(source?.error));
   }
 
   const { source: sourceName, items, empty } = TABS[currentTab];
   const source = state[sourceName];
-  showMessage(state.error ?? source?.error, source?.loginUrl);
+  showMessages(currentProblems(state));
   footer.textContent = footerText(sourceName, source?.data);
   list.replaceChildren();
   if (!source?.data) return;
@@ -228,4 +247,4 @@ async function init() {
   await refresh();
 }
 
-init().catch((error) => showMessage(error.message, null));
+init().catch((error) => showMessages([{ text: error.message, loginUrl: null }]));
