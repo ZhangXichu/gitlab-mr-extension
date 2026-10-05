@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GitLab MR Board</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="popup">
+  <header>
+    <nav role="tablist">
+      <button role="tab" data-tab="mine" aria-selected="true">My MRs <span class="count" data-count="mine"></span></button>
+      <button role="tab" data-tab="reviewing" aria-selected="false">To review <span class="count" data-count="reviewing"></span></button>
+      <button role="tab" data-tab="mentions" aria-selected="false">Mentions <span class="count" data-count="mentions"></span></button>
+    </nav>
+    <div class="tools">
+      <button id="refresh" title="Refresh">↻</button>
+      <button id="options" title="Options">⚙</button>
+    </div>
+  </header>
+  <p id="message" class="message" hidden></p>
+  <ul id="list" class="list"></ul>
+  <footer id="footer"></footer>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GitLab MR Board - Options</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="options">
+  <h1>GitLab MR Board</h1>
+  <form id="form">
+    <label>GitLab URL
+      <input id="baseUrl" type="url" required>
+    </label>
+    <label>Personal access token
+      <input id="token" type="password" required autocomplete="off">
+    </label>
+    <p class="hint">
+      Make one in GitLab: <em>User settings → Access tokens</em>.
+      Scope <code>read_api</code> is enough to see the lists.
+      Pick <code>api</code> if you also want the "Done" button on mentions to work.
+    </p>
+    <button type="submit">Save and test</button>
+    <p id="status" role="status"></p>
+  </form>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1f1f1f;
+  --muted: #666;
+  --line: #e5e5e5;
+  --accent: #fc6d26;
+  --error: #d93025;
+  --tag: #f0f0f0;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1e1e1e; --fg: #e8e8e8; --muted: #a0a0a0; --line: #333; --tag: #2c2c2c; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.4 system-ui, sans-serif; }
+button { font: inherit; color: inherit; background: none; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; padding: 2px 8px; }
+button:disabled { opacity: 0.5; cursor: default; }
+a { color: inherit; }
+
+.popup { width: 440px; }
+.popup header { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--line); }
+.popup nav { display: flex; gap: 4px; }
+.popup nav button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+.tools { display: flex; gap: 4px; }
+.count { font-weight: 600; }
+.message { margin: 8px; padding: 6px 8px; border-radius: 4px; background: var(--tag); }
+.message.error { color: var(--error); }
+.list { list-style: none; margin: 0; padding: 0; max-height: 480px; overflow-y: auto; }
+.item { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.item .title { font-weight: 600; text-decoration: none; display: block; }
+.item .title:hover { text-decoration: underline; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.ref { font-family: ui-monospace, monospace; }
+.tag { background: var(--tag); border-radius: 3px; padding: 0 5px; }
+.tag.conflict { color: var(--error); }
+.body { margin: 4px 0; color: var(--muted); white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.done { margin-left: auto; font-size: 11px; }
+.empty { padding: 16px; color: var(--muted); text-align: center; }
+footer { padding: 6px 10px; color: var(--muted); font-size: 11px; }
+
+.options { max-width: 520px; margin: 32px auto; padding: 0 16px; }
+.options label { display: block; margin-bottom: 12px; font-weight: 600; }
+.options input { display: block; width: 100%; margin-top: 4px; padding: 6px; font: inherit; }
+.hint { color: var(--muted); }
+.ok { color: green; }
+.error { color: var(--error); }
